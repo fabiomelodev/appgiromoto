@@ -65,6 +65,28 @@ class AuthTest extends TestCase
         $this->assertSame('Centro', $user->profile->district);
     }
 
+    public function test_signup_as_business_sets_profile_role(): void
+    {
+        Livewire::test(Login::class)
+            ->set('mode', 'signup')
+            ->call('setAccountRole', 'business')
+            ->set('name', 'Restaurante da Ana')
+            ->set('birthDate', '10/05/1990')
+            ->set('phone', '(11) 99999-0000')
+            ->set('street', 'Av Paulista')
+            ->set('number', '100')
+            ->set('district', 'Centro')
+            ->set('city', 'São Paulo')
+            ->set('email', 'restaurante@test.dev')
+            ->set('password', 'secret123')
+            ->set('passwordConfirmation', 'secret123')
+            ->call('submit')
+            ->assertHasNoErrors();
+
+        $user = User::where('email', 'restaurante@test.dev')->first();
+        $this->assertSame('business', $user->profile->role);
+    }
+
     public function test_signup_rejects_mismatched_passwords(): void
     {
         Livewire::test(Login::class)

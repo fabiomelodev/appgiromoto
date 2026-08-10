@@ -30,6 +30,28 @@
         {{-- Form --}}
         <form wire:submit="submit" class="space-y-3 rounded-2xl border border-border bg-card p-5">
             @if ($mode === 'signup')
+                <div>
+                    <label class="mb-2 block text-xs font-medium text-muted-foreground">Você é...</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" wire:click="setAccountRole('courier')"
+                            class="flex items-center gap-2 rounded-xl border p-3 text-left transition {{ $accountRole === 'courier' ? 'border-primary bg-accent text-foreground shadow-sm glow-orange' : 'border-border bg-surface text-muted-foreground hover:text-foreground' }}">
+                            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg {{ $accountRole === 'courier' ? 'bg-primary text-primary-foreground' : 'bg-surface-elevated' }}">
+                                <x-ui.icon name="bike" class="h-5 w-5" />
+                            </span>
+                            <span class="text-sm font-semibold">Motoboy</span>
+                        </button>
+                        <button type="button" wire:click="setAccountRole('business')"
+                            class="flex items-center gap-2 rounded-xl border p-3 text-left transition {{ $accountRole === 'business' ? 'border-primary bg-accent text-foreground shadow-sm glow-orange' : 'border-border bg-surface text-muted-foreground hover:text-foreground' }}">
+                            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg {{ $accountRole === 'business' ? 'bg-primary text-primary-foreground' : 'bg-surface-elevated' }}">
+                                <x-ui.icon name="store" class="h-5 w-5" />
+                            </span>
+                            <span class="text-sm font-semibold">Restaurante</span>
+                        </button>
+                    </div>
+                    @error('accountRole') <p class="mt-1 text-[11px] font-medium text-destructive">{{ $message }}</p> @enderror
+                    <p class="mt-1.5 text-[11px] text-muted-foreground">Depois você pode alternar entre os dois perfis em Configurações.</p>
+                </div>
+
                 <x-ui.field label="Nome completo">
                     <x-ui.input wire:model="name" placeholder="João da Silva" />
                     @error('name') <p class="mt-1 text-[11px] font-medium text-destructive">{{ $message }}</p> @enderror

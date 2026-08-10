@@ -26,6 +26,9 @@ class Login extends Component
     public string $passwordConfirmation = '';
 
     // signup-only
+    /** 'courier' (motoboy) | 'business' (restaurante) */
+    public string $accountRole = 'courier';
+
     public string $name = '';
 
     public string $birthDate = '';
@@ -64,7 +67,12 @@ class Login extends Component
         $this->mode = $mode === 'signup' ? 'signup' : 'signin';
         $this->notice = null;
         $this->resetErrorBag();
-        $this->reset('password', 'passwordConfirmation', 'name', 'birthDate', 'phone', 'cep', 'street', 'number', 'district', 'city');
+        $this->reset('password', 'passwordConfirmation', 'accountRole', 'name', 'birthDate', 'phone', 'cep', 'street', 'number', 'district', 'city');
+    }
+
+    public function setAccountRole(string $role): void
+    {
+        $this->accountRole = $role === 'business' ? 'business' : 'courier';
     }
 
     /** Fills street / district / city from the CEP (ViaCEP), like the address forms. */
@@ -122,6 +130,7 @@ class Login extends Component
     protected function register()
     {
         $this->validate([
+            'accountRole' => ['required', 'in:courier,business'],
             'name' => ['required', 'min:2'],
             'birthDate' => ['required'],
             'phone' => ['required'],
@@ -164,7 +173,7 @@ class Login extends Component
 
             // UserObserver already created a base profile + settings.
             $user->profile()->update([
-                'role' => 'courier',
+                'role' => $this->accountRole,
                 'name' => trim($this->name),
                 'birth_date' => $birth,
                 'phone' => $phoneDigits,
@@ -177,7 +186,7 @@ class Login extends Component
 
         // Mirror the original app: do not auto-login; switch to sign-in.
         $this->mode = 'signin';
-        $this->reset('password', 'passwordConfirmation', 'name', 'birthDate', 'phone', 'cep', 'street', 'number', 'district', 'city');
+        $this->reset('password', 'passwordConfirmation', 'accountRole', 'name', 'birthDate', 'phone', 'cep', 'street', 'number', 'district', 'city');
         $this->notice = 'Cadastro realizado com sucesso! Faça login para entrar.';
 
         return null;
