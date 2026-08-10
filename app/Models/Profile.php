@@ -20,6 +20,7 @@ class Profile extends Model
     protected $fillable = [
         'id',
         'role',
+        'onboarded_at',
         'name',
         'photo_url',
         'city',
@@ -36,6 +37,7 @@ class Profile extends Model
 
     protected $casts = [
         'birth_date' => 'date',
+        'onboarded_at' => 'datetime',
         'has_bag' => 'boolean',
         'avg_rating' => 'float',
         'total_reviews' => 'integer',
@@ -66,5 +68,10 @@ class Profile extends Model
     public function isBusiness(): bool
     {
         return $this->role === 'business';
+    }
+
+    public function isOnboarded(): bool
+    {
+        return ! is_null($this->onboarded_at);
     }
 }

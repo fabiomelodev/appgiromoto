@@ -73,6 +73,17 @@ class Settings extends Component
         $this->dispatch('toast', message: 'Cidade atualizada.');
     }
 
+    /** Switch the active profile (courier <-> business); the same account can be both, one at a time. */
+    public function switchRole(string $role): void
+    {
+        if (! in_array($role, ['courier', 'business'], true)) {
+            return;
+        }
+
+        Auth::user()->profile?->update(['role' => $role]);
+        $this->dispatch('toast', message: $role === 'business' ? 'Perfil alterado para Restaurante.' : 'Perfil alterado para Motoboy.');
+    }
+
     public function updateEmail(): void
     {
         $this->validate(

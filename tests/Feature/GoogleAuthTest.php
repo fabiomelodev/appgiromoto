@@ -44,6 +44,7 @@ class GoogleAuthTest extends TestCase
         $this->assertNull($user->password, 'usuário Google não tem senha local');
         $this->assertSame('courier', $user->profile->role, 'profile provisionado pelo observer');
         $this->assertSame('https://x/avatar.png', $user->profile->photo_url);
+        $this->assertFalse($user->profile->isOnboarded(), 'conta nova via Google ainda precisa passar pelo onboarding');
     }
 
     public function test_callback_links_existing_email_account_without_duplicating(): void

@@ -34,47 +34,6 @@
                     <x-ui.input wire:model="name" placeholder="João da Silva" />
                     @error('name') <p class="mt-1 text-[11px] font-medium text-destructive">{{ $message }}</p> @enderror
                 </x-ui.field>
-
-                <x-ui.field label="Data de nascimento">
-                    <x-ui.input wire:model="birthDate" inputmode="numeric" placeholder="DD/MM/AAAA"
-                        x-on:input="$el.value = window.maskDate($el.value)" />
-                    @error('birthDate') <p class="mt-1 text-[11px] font-medium text-destructive">{{ $message }}</p> @enderror
-                </x-ui.field>
-
-                <x-ui.field label="Telefone / WhatsApp">
-                    <x-ui.input wire:model="phone" inputmode="tel" placeholder="(11) 9 9999-0000"
-                        x-on:input="$el.value = window.maskPhone($el.value)" />
-                    @error('phone') <p class="mt-1 text-[11px] font-medium text-destructive">{{ $message }}</p> @enderror
-                </x-ui.field>
-
-                <x-ui.field label="CEP">
-                    <div class="relative">
-                        <x-ui.input wire:model="cep" inputmode="numeric" maxlength="9" placeholder="00000-000"
-                            x-on:input="$el.value = window.maskCep($el.value)"
-                            x-on:blur="$wire.set('cep', $el.value).then(() => $wire.lookupCep())" />
-                        <span wire:loading wire:target="lookupCep" class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                            <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="3" /><path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
-                        </span>
-                    </div>
-                </x-ui.field>
-
-                <div class="grid grid-cols-[1fr_90px] gap-2">
-                    <x-ui.field label="Rua">
-                        <x-ui.input wire:model="street" placeholder="Av. Paulista" />
-                    </x-ui.field>
-                    <x-ui.field label="Número">
-                        <x-ui.input wire:model="number" placeholder="100" />
-                    </x-ui.field>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <x-ui.field label="Bairro">
-                        <x-ui.input wire:model="district" placeholder="Centro" />
-                    </x-ui.field>
-                    <x-ui.field label="Cidade">
-                        <x-ui.input wire:model="city" placeholder="São Paulo - SP" />
-                    </x-ui.field>
-                </div>
             @endif
 
             <x-ui.field label="E-mail">

@@ -48,6 +48,27 @@
             <x-settings-row label="Telefone" :value="$profile?->phone ?: 'Não informado'" />
         </x-settings-section>
 
+        {{-- Active profile --}}
+        <x-settings-section icon="refresh-cw" title="Perfil">
+            <p class="mb-3 text-xs text-muted-foreground">Sua conta pode ser as duas coisas — alterne quando quiser.</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button" wire:click="switchRole('courier')"
+                    class="flex flex-col items-start gap-2 rounded-xl border p-3 text-left transition {{ $profile?->role === 'courier' ? 'border-primary bg-accent text-foreground shadow-sm glow-orange' : 'border-border bg-surface text-muted-foreground hover:text-foreground' }}">
+                    <span class="grid h-9 w-9 place-items-center rounded-lg {{ $profile?->role === 'courier' ? 'bg-primary text-primary-foreground' : 'bg-surface-elevated' }}">
+                        <x-ui.icon name="bike" class="h-5 w-5" />
+                    </span>
+                    <div class="text-sm font-semibold text-foreground">Motoboy</div>
+                </button>
+                <button type="button" wire:click="switchRole('business')"
+                    class="flex flex-col items-start gap-2 rounded-xl border p-3 text-left transition {{ $profile?->role === 'business' ? 'border-primary bg-accent text-foreground shadow-sm glow-orange' : 'border-border bg-surface text-muted-foreground hover:text-foreground' }}">
+                    <span class="grid h-9 w-9 place-items-center rounded-lg {{ $profile?->role === 'business' ? 'bg-primary text-primary-foreground' : 'bg-surface-elevated' }}">
+                        <x-ui.icon name="store" class="h-5 w-5" />
+                    </span>
+                    <div class="text-sm font-semibold text-foreground">Restaurante</div>
+                </button>
+            </div>
+        </x-settings-section>
+
         {{-- Account & security --}}
         <x-settings-section icon="shield-check" title="Conta e segurança">
             <x-settings-row label="E-mail" :value="$user->email">
