@@ -27,11 +27,13 @@
     <header class="flex items-center justify-between gap-2">
         <x-logo />
         <div class="flex min-w-0 items-center gap-2">
-            <button type="button" @click="vehicleOpen = true" aria-label="Trocar veículo"
-                class="tap flex min-w-0 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-2 text-[11px] font-semibold text-primary transition hover:bg-primary/20">
-                <x-ui.icon :name="$vehicleIcon" class="h-3.5 w-3.5 shrink-0" />
-                <span class="max-w-[120px] truncate">{{ Catalog::VEHICLE_LABEL_SHORT[$activeVehicle] ?? 'Moto' }}</span>
-            </button>
+            @if ($currentRole !== 'business')
+                <button type="button" @click="vehicleOpen = true" aria-label="Trocar veículo"
+                    class="tap flex min-w-0 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-2 text-[11px] font-semibold text-primary transition hover:bg-primary/20">
+                    <x-ui.icon :name="$vehicleIcon" class="h-3.5 w-3.5 shrink-0" />
+                    <span class="max-w-[120px] truncate">{{ Catalog::VEHICLE_LABEL_SHORT[$activeVehicle] ?? 'Moto' }}</span>
+                </button>
+            @endif
             <button type="button" @click="roleOpen = true" aria-label="Trocar perfil"
                 class="tap grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-surface text-muted-foreground transition hover:text-foreground">
                 <x-ui.icon :name="$currentRole === 'business' ? 'store' : 'bike'" class="h-4 w-4" />

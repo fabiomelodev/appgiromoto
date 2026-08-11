@@ -149,6 +149,18 @@ class ShiftsIndexTest extends TestCase
         $this->assertSame('business', $user->profile->fresh()->role);
     }
 
+    public function test_vehicle_button_hidden_for_business_shown_for_courier(): void
+    {
+        $courier = $this->creator();
+        $this->actingAs($courier);
+        Livewire::test(Index::class)->assertSeeHtml('aria-label="Trocar veículo"');
+
+        $owner = $this->creator();
+        $owner->profile()->update(['role' => 'business']);
+        $this->actingAs($owner);
+        Livewire::test(Index::class)->assertDontSeeHtml('aria-label="Trocar veículo"');
+    }
+
     public function test_switch_role_to_courier_redirects_when_data_is_missing(): void
     {
         $user = $this->creator();
