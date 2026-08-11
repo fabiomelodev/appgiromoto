@@ -19,6 +19,9 @@ class UserObserver
             ['id' => $user->id],
             [
                 'role' => 'courier',
+                // Overridden to null by real signup flows (email/password, Google)
+                // to send genuinely new accounts through onboarding.
+                'onboarded_at' => now(),
                 'name' => $user->name ?: Str::before($user->email ?? '', '@') ?: 'Usuário',
             ],
         );

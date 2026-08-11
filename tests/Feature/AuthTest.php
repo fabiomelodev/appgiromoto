@@ -39,17 +39,11 @@ class AuthTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_signup_creates_user_and_profile_without_auto_login(): void
+    public function test_signup_creates_user_and_profile_pending_onboarding(): void
     {
         Livewire::test(Login::class)
             ->set('mode', 'signup')
             ->set('name', 'João Silva')
-            ->set('birthDate', '10/05/1990')
-            ->set('phone', '(11) 99999-0000')
-            ->set('street', 'Av Paulista')
-            ->set('number', '100')
-            ->set('district', 'Centro')
-            ->set('city', 'São Paulo')
             ->set('email', 'joao@test.dev')
             ->set('password', 'secret123')
             ->set('passwordConfirmation', 'secret123')
@@ -60,9 +54,8 @@ class AuthTest extends TestCase
         $this->assertGuest();
         $user = User::where('email', 'joao@test.dev')->first();
         $this->assertNotNull($user);
-        $this->assertSame('11999990000', $user->profile->phone);
-        $this->assertSame('1990-05-10', $user->profile->birth_date->toDateString());
-        $this->assertSame('Centro', $user->profile->district);
+        $this->assertSame('courier', $user->profile->role, 'papel padrão até o onboarding definir o real');
+        $this->assertFalse($user->profile->isOnboarded(), 'cadastro por e-mail/senha ainda precisa passar pelo onboarding');
     }
 
     public function test_signup_rejects_mismatched_passwords(): void
@@ -70,12 +63,6 @@ class AuthTest extends TestCase
         Livewire::test(Login::class)
             ->set('mode', 'signup')
             ->set('name', 'João Silva')
-            ->set('birthDate', '10/05/1990')
-            ->set('phone', '(11) 99999-0000')
-            ->set('street', 'Av Paulista')
-            ->set('number', '100')
-            ->set('district', 'Centro')
-            ->set('city', 'São Paulo')
             ->set('email', 'joao2@test.dev')
             ->set('password', 'secret123')
             ->set('passwordConfirmation', 'different')
@@ -83,26 +70,6 @@ class AuthTest extends TestCase
             ->assertHasErrors('password');
 
         $this->assertNull(User::where('email', 'joao2@test.dev')->first());
-    }
-
-    public function test_signup_rejects_users_under_18(): void
-    {
-        Livewire::test(Login::class)
-            ->set('mode', 'signup')
-            ->set('name', 'Jovem Demais')
-            ->set('birthDate', now()->subYears(17)->format('d/m/Y'))
-            ->set('phone', '(11) 99999-0000')
-            ->set('street', 'Av Paulista')
-            ->set('number', '100')
-            ->set('district', 'Centro')
-            ->set('city', 'São Paulo')
-            ->set('email', 'jovem@test.dev')
-            ->set('password', 'secret123')
-            ->set('passwordConfirmation', 'secret123')
-            ->call('submit')
-            ->assertHasErrors('birthDate');
-
-        $this->assertNull(User::where('email', 'jovem@test.dev')->first(), 'menor de 18 não deve criar conta');
     }
 
     public function test_signin_authenticates_existing_user(): void

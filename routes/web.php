@@ -12,6 +12,7 @@ use App\Livewire\History;
 use App\Livewire\MapPage;
 use App\Livewire\Menu;
 use App\Livewire\Notifications\Page as NotificationsPage;
+use App\Livewire\Onboarding;
 use App\Livewire\ProfilePage;
 use App\Livewire\Settings;
 use App\Livewire\Shifts\Create as ShiftsCreate;
@@ -42,8 +43,14 @@ Route::post('/logout', function () {
     return redirect()->route('login');
 })->middleware('auth')->name('logout');
 
-// ── Authenticated app ────────────────────────────────────────────
+// ── Post-login onboarding (role, address...) ─────────────────────
+// Deliberately outside the 'onboarded' gate below, to avoid a redirect loop.
 Route::middleware('auth')->group(function () {
+    Route::get('/onboarding', Onboarding::class)->name('onboarding');
+});
+
+// ── Authenticated app ────────────────────────────────────────────
+Route::middleware(['auth', 'onboarded'])->group(function () {
     Route::redirect('/', '/shifts');
 
     // Shifts
