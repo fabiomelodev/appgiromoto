@@ -96,6 +96,8 @@ class OnboardingTest extends TestCase
             ->set('name', 'João Silva')
             ->set('birthDate', '10/05/1990')
             ->set('phone', '(11) 99999-0000')
+            ->set('street', 'Av Paulista')
+            ->set('number', '100')
             ->set('district', 'Centro')
             ->set('city', 'São Paulo')
             ->call('nextStep')
@@ -139,9 +141,9 @@ class OnboardingTest extends TestCase
         $this->actingAs($this->pendingUser());
 
         Livewire::test(Onboarding::class)
-            ->call('setRole', 'courier')
-            ->set('name', 'Jovem Demais')
-            ->set('birthDate', now()->subYears(17)->format('d/m/Y'))
+            ->call('setRole', 'business')
+            ->set('name', 'Restaurante da Ana')
+            ->set('birthDate', '10/05/1990')
             ->set('phone', '(11) 99999-0000')
             ->set('district', 'Centro')
             ->set('city', 'São Paulo')
