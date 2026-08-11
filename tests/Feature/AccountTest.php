@@ -53,6 +53,18 @@ class AccountTest extends TestCase
             ->assertSee(route('filament.admin.pages.dashboard'));
     }
 
+    public function test_menu_shows_vehicle_link_only_to_courier(): void
+    {
+        $courier = $this->user();
+        $this->actingAs($courier);
+        Livewire::test(Menu::class)->assertSee('Veículo e Documentação');
+
+        $owner = $this->user();
+        $owner->profile()->update(['role' => 'business']);
+        $this->actingAs($owner);
+        Livewire::test(Menu::class)->assertDontSee('Veículo e Documentação');
+    }
+
     public function test_profile_save_updates_profile_and_user_name(): void
     {
         $user = $this->user();
