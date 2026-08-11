@@ -7,7 +7,9 @@ use App\Livewire\ProfilePage;
 use App\Livewire\Settings;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -63,6 +65,24 @@ class AccountTest extends TestCase
         $owner->profile()->update(['role' => 'business']);
         $this->actingAs($owner);
         Livewire::test(Menu::class)->assertDontSee('Veículo e Documentação');
+    }
+
+    public function test_uploading_a_photo_stores_it_publicly_and_updates_profile_url(): void
+    {
+        Storage::fake('public');
+        $user = $this->user();
+        $this->actingAs($user);
+
+        Livewire::test(ProfilePage::class)
+            ->set('photo', UploadedFile::fake()->image('avatar.jpg'))
+            ->assertDispatched('toast');
+
+        $profile = $user->fresh()->profile;
+        $this->assertNotNull($profile->photo_url, 'photo_url deve ser preenchido após o upload');
+        $this->assertStringContainsString('/storage/avatars/', $profile->photo_url);
+
+        $path = 'avatars/'.$user->id.'.jpg';
+        Storage::disk('public')->assertExists($path);
     }
 
     public function test_profile_save_updates_profile_and_user_name(): void
