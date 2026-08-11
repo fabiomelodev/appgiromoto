@@ -2,9 +2,11 @@
 
 namespace App\Livewire;
 
+use App\Support\Catalog;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -13,6 +15,9 @@ use Livewire\Component;
 #[Title('Complete seu cadastro — ZunMoto')]
 class Onboarding extends Component
 {
+    /** 1 = role + personal data; 2 = vehicle (courier only). */
+    public int $step = 1;
+
     /** 'courier' (motoboy) | 'business' (restaurante) */
     public string $role = 'courier';
 
@@ -33,6 +38,8 @@ class Onboarding extends Component
     public string $city = '';
 
     public bool $cepBusy = false;
+
+    public string $vehicle = '';
 
     public function mount(): void
     {
@@ -80,18 +87,18 @@ class Onboarding extends Component
         }
     }
 
-    public function submit()
+    /** Step 1: role + personal data. Business finishes here; courier moves on to pick a vehicle. */
+    public function nextStep()
     {
         $rules = [
             'role' => ['required', 'in:courier,business'],
             'name' => ['required', 'min:2'],
+            'birthDate' => ['required'],
             'phone' => ['required'],
             'district' => ['required', 'min:2'],
             'city' => ['required', 'min:2'],
         ];
-        if ($this->role === 'courier') {
-            $rules['birthDate'] = ['required'];
-        } else {
+        if ($this->role === 'business') {
             // Only the establishment's address needs street-level precision;
             // the courier's own CEP/bairro/cidade is enough (not used for geocoding).
             $rules['street'] = ['required', 'min:2'];
@@ -107,19 +114,21 @@ class Onboarding extends Component
             return null;
         }
 
-        $birth = null;
-        if ($this->role === 'courier') {
-            $birth = $this->parseBrDate($this->birthDate);
-            if (! $birth) {
-                $this->addError('birthDate', 'Data de nascimento inválida (use DD/MM/AAAA).');
+        $birth = $this->parseBrDate($this->birthDate);
+        if (! $birth) {
+            $this->addError('birthDate', 'Data de nascimento inválida (use DD/MM/AAAA).');
 
-                return null;
-            }
-            if (Carbon::parse($birth)->isAfter(now()->subYears(18))) {
-                $this->addError('birthDate', 'Você precisa ter pelo menos 18 anos para se cadastrar como motoboy.');
+            return null;
+        }
 
-                return null;
-            }
+        // Motoboy: mínimo 16 anos. Restaurante (responsável pelo cadastro): mínimo 18 anos.
+        $minAge = $this->role === 'business' ? 18 : 16;
+        if (Carbon::parse($birth)->isAfter(now()->subYears($minAge))) {
+            $this->addError('birthDate', $this->role === 'business'
+                ? 'Você precisa ter pelo menos 18 anos para se cadastrar como restaurante.'
+                : 'Você precisa ter pelo menos 16 anos para se cadastrar como motoboy.');
+
+            return null;
         }
 
         $user = Auth::user();
@@ -132,11 +141,59 @@ class Onboarding extends Component
             'district' => trim($this->district),
             'city' => trim($this->city),
             'birth_date' => $birth,
-            'onboarded_at' => now(),
         ]);
         $user->update(['name' => trim($this->name)]);
 
+        // Restaurante não escolhe veículo: cadastro termina aqui.
+        if ($this->role === 'business') {
+            $user->profile()->update(['onboarded_at' => now()]);
+
+            return $this->redirect(route('shifts.index'), navigate: true);
+        }
+
+        $this->step = 2;
+
+        return null;
+    }
+
+    public function setVehicle(string $vehicle): void
+    {
+        if ($vehicle === 'moto' && $this->isMinor) {
+            return;
+        }
+        if (in_array($vehicle, Catalog::VEHICLE_OPTIONS, true)) {
+            $this->vehicle = $vehicle;
+        }
+    }
+
+    /** Step 2 (courier only): pick a vehicle and finish onboarding. */
+    public function finish()
+    {
+        $this->validate([
+            'vehicle' => ['required', 'in:'.implode(',', Catalog::VEHICLE_OPTIONS)],
+        ], [], ['vehicle' => 'veículo']);
+
+        if ($this->vehicle === 'moto' && $this->isMinor) {
+            $this->addError('vehicle', 'Você precisa ter 18 anos para escolher moto.');
+
+            return null;
+        }
+
+        Auth::user()->profile()->update([
+            'vehicle' => $this->vehicle,
+            'onboarded_at' => now(),
+        ]);
+
         return $this->redirect(route('shifts.index'), navigate: true);
+    }
+
+    /** Whether the birth date entered in step 1 makes the account under 18. */
+    #[Computed]
+    public function isMinor(): bool
+    {
+        $birth = $this->parseBrDate($this->birthDate);
+
+        return $birth && Carbon::parse($birth)->isAfter(now()->subYears(18));
     }
 
     protected function parseBrDate(string $value): ?string
