@@ -89,6 +89,35 @@ class AccountTest extends TestCase
         $this->assertSame('Maria Souza', $user->fresh()->name);
     }
 
+    public function test_profile_page_hides_courier_only_sections_for_business(): void
+    {
+        $courier = $this->user();
+        $this->actingAs($courier);
+        Livewire::test(ProfilePage::class)
+            ->assertSee('Avaliações')
+            ->assertSee('Endereço')
+            ->assertSee('Equipamentos disponíveis');
+
+        $owner = $this->user();
+        $owner->profile()->update(['role' => 'business']);
+        $this->actingAs($owner);
+        Livewire::test(ProfilePage::class)
+            ->assertDontSee('Avaliações')
+            ->assertDontSee('Equipamentos disponíveis')
+            ->assertSee('Meus Endereços');
+    }
+
+    public function test_profile_page_has_no_verification_or_status_badges(): void
+    {
+        $this->actingAs($this->user());
+
+        Livewire::test(ProfilePage::class)
+            ->assertDontSee('Verificado')
+            ->assertDontSee('Conta nova')
+            ->assertDontSee('Entregador ativo')
+            ->assertDontSee('Entregador experiente');
+    }
+
     public function test_settings_notifications_persist(): void
     {
         $user = $this->user();
