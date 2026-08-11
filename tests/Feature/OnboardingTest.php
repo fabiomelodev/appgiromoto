@@ -171,7 +171,7 @@ class OnboardingTest extends TestCase
         $this->assertFalse(auth()->user()->profile->fresh()->isOnboarded());
     }
 
-    public function test_completing_as_business_requires_18_and_does_not_require_vehicle(): void
+    public function test_completing_as_business_requires_18_and_does_not_ask_for_address_or_vehicle(): void
     {
         $this->actingAs($this->pendingUser());
 
@@ -180,10 +180,6 @@ class OnboardingTest extends TestCase
             ->set('name', 'Restaurante da Ana')
             ->set('birthDate', '10/05/1990')
             ->set('phone', '(11) 99999-0000')
-            ->set('street', 'Av Paulista')
-            ->set('number', '100')
-            ->set('district', 'Centro')
-            ->set('city', 'São Paulo')
             ->call('nextStep')
             ->assertHasNoErrors()
             ->assertRedirect(route('shifts.index'));
@@ -191,8 +187,8 @@ class OnboardingTest extends TestCase
         $profile = auth()->user()->profile->fresh();
         $this->assertSame('business', $profile->role);
         $this->assertSame('1990-05-10', $profile->birth_date->toDateString());
-        $this->assertSame('Av Paulista', $profile->street, 'restaurante precisa de rua/número (endereço do estabelecimento)');
-        $this->assertSame('100', $profile->street_number);
+        $this->assertNull($profile->district, 'endereço do estabelecimento é cadastrado depois, em Meus Endereços');
+        $this->assertNull($profile->city);
         $this->assertTrue($profile->isOnboarded());
     }
 
@@ -205,29 +201,8 @@ class OnboardingTest extends TestCase
             ->set('name', 'Restaurante do Jovem')
             ->set('birthDate', now()->subYears(17)->format('d/m/Y'))
             ->set('phone', '(11) 99999-0000')
-            ->set('street', 'Av Paulista')
-            ->set('number', '100')
-            ->set('district', 'Centro')
-            ->set('city', 'São Paulo')
             ->call('nextStep')
             ->assertHasErrors('birthDate');
-
-        $this->assertFalse(auth()->user()->profile->fresh()->isOnboarded());
-    }
-
-    public function test_business_requires_street_and_number(): void
-    {
-        $this->actingAs($this->pendingUser());
-
-        Livewire::test(Onboarding::class)
-            ->call('setRole', 'business')
-            ->set('name', 'Restaurante da Ana')
-            ->set('birthDate', '10/05/1990')
-            ->set('phone', '(11) 99999-0000')
-            ->set('district', 'Centro')
-            ->set('city', 'São Paulo')
-            ->call('nextStep')
-            ->assertHasErrors(['street', 'number']);
 
         $this->assertFalse(auth()->user()->profile->fresh()->isOnboarded());
     }

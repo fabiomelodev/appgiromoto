@@ -29,10 +29,6 @@ class Onboarding extends Component
 
     public string $cep = '';
 
-    public string $street = '';
-
-    public string $number = '';
-
     public string $district = '';
 
     public string $city = '';
@@ -60,7 +56,7 @@ class Onboarding extends Component
         $this->role = $role === 'business' ? 'business' : 'courier';
     }
 
-    /** Fills street / district / city from the CEP (ViaCEP), like the address forms. */
+    /** Fills district / city from the CEP (ViaCEP), like the address forms. */
     public function lookupCep(): void
     {
         $digits = preg_replace('/\D/', '', $this->cep);
@@ -72,7 +68,6 @@ class Onboarding extends Component
         try {
             $data = Http::timeout(6)->get("https://viacep.com.br/ws/{$digits}/json/")->json();
             if (is_array($data) && empty($data['erro'])) {
-                $this->street = $data['logradouro'] ?: $this->street;
                 $this->district = $data['bairro'] ?: $this->district;
                 $this->city = ($data['localidade'] ?? '')
                     ? trim(($data['localidade'] ?? '').(isset($data['uf']) ? ' - '.$data['uf'] : ''))
@@ -95,14 +90,14 @@ class Onboarding extends Component
             'name' => ['required', 'min:2'],
             'birthDate' => ['required'],
             'phone' => ['required'],
-            'district' => ['required', 'min:2'],
-            'city' => ['required', 'min:2'],
         ];
-        if ($this->role === 'business') {
-            // Only the establishment's address needs street-level precision;
-            // the courier's own CEP/bairro/cidade is enough (not used for geocoding).
-            $rules['street'] = ['required', 'min:2'];
-            $rules['number'] = ['required'];
+        if ($this->role === 'courier') {
+            // The establishment's real address is registered later, per venue,
+            // in "Meus Endereços" — asking for one here wouldn't be tied to
+            // anything. The courier's own CEP/bairro/cidade doubles as the
+            // "cidade base" used in Configurações to filter nearby shifts.
+            $rules['district'] = ['required', 'min:2'];
+            $rules['city'] = ['required', 'min:2'];
         }
 
         $this->validate($rules);
@@ -125,7 +120,7 @@ class Onboarding extends Component
         $minAge = $this->role === 'business' ? 18 : 16;
         if (Carbon::parse($birth)->isAfter(now()->subYears($minAge))) {
             $this->addError('birthDate', $this->role === 'business'
-                ? 'Você precisa ter pelo menos 18 anos para se cadastrar como restaurante.'
+                ? 'Você precisa ter pelo menos 18 anos para se cadastrar como estabelecimento.'
                 : 'Você precisa ter pelo menos 16 anos para se cadastrar como motoboy.');
 
             return null;
@@ -136,10 +131,8 @@ class Onboarding extends Component
             'role' => $this->role,
             'name' => trim($this->name),
             'phone' => $phoneDigits,
-            'street' => $this->role === 'business' ? trim($this->street) : null,
-            'street_number' => $this->role === 'business' ? trim($this->number) : null,
-            'district' => trim($this->district),
-            'city' => trim($this->city),
+            'district' => $this->role === 'courier' ? trim($this->district) : null,
+            'city' => $this->role === 'courier' ? trim($this->city) : null,
             'birth_date' => $birth,
         ]);
         $user->update(['name' => trim($this->name)]);
