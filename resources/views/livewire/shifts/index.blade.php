@@ -2,6 +2,7 @@
     use App\Support\Catalog;
     $activeVehicle = $this->activeVehicle;
     $vehicleIcon = Catalog::VEHICLE_ICON[$activeVehicle] ?? 'bike';
+    $currentRole = $this->currentRole;
     // Fetched once here (not per card) to avoid N+1 taxonomy queries in the list below.
     $venueTypeLabels = Catalog::allVenueTypeLabels();
     $expectedVolumeLabels = Catalog::allExpectedVolumeLabels();
@@ -13,6 +14,7 @@
     x-data="{
         filtersOpen: false,
         vehicleOpen: false,
+        roleOpen: false,
         draft: @js($filters),
         initial: { vehicles: [], dailyMin: '', feeMin: '', startTime: '', benefits: [], ownBag: 'any', date: '', onlyInterested: false },
         openFilters() { this.filtersOpen = true; },
@@ -29,6 +31,10 @@
                 class="tap flex min-w-0 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-2 text-[11px] font-semibold text-primary transition hover:bg-primary/20">
                 <x-ui.icon :name="$vehicleIcon" class="h-3.5 w-3.5 shrink-0" />
                 <span class="max-w-[120px] truncate">{{ Catalog::VEHICLE_LABEL_SHORT[$activeVehicle] ?? 'Moto' }}</span>
+            </button>
+            <button type="button" @click="roleOpen = true" aria-label="Trocar perfil"
+                class="tap grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-surface text-muted-foreground transition hover:text-foreground">
+                <x-ui.icon :name="$currentRole === 'business' ? 'store' : 'bike'" class="h-4 w-4" />
             </button>
             <a href="{{ route('notifications') }}" wire:navigate aria-label="Notificações"
                 class="tap relative grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-surface text-muted-foreground transition hover:text-foreground">
@@ -235,6 +241,28 @@
                 class="mt-4 block w-full rounded-xl border border-border/60 bg-surface py-3 text-center text-xs font-semibold text-muted-foreground hover:text-foreground">
                 Gerenciar documentos do veículo
             </a>
+        </div>
+    </div>
+
+    {{-- ── Switch profile confirm ───────────────────────────────── --}}
+    <div x-show="roleOpen" x-cloak x-transition.opacity
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" @click.self="roleOpen = false">
+        <div class="w-full max-w-sm rounded-2xl border border-border bg-card p-5">
+            <h2 class="font-display text-lg font-bold">Trocar perfil</h2>
+            <p class="mt-1.5 text-sm text-muted-foreground">
+                @if ($currentRole === 'business')
+                    Você está como Estabelecimento. Quer virar Motoboy?
+                @else
+                    Você está como Motoboy. Quer virar Estabelecimento?
+                @endif
+            </p>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" @click="roleOpen = false"
+                    class="rounded-xl px-4 py-2 text-xs font-medium text-muted-foreground hover:text-foreground">Cancelar</button>
+                <button type="button"
+                    @click="$wire.switchRole('{{ $currentRole === 'business' ? 'courier' : 'business' }}'); roleOpen = false"
+                    class="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground">Confirmar</button>
+            </div>
         </div>
     </div>
 </div>

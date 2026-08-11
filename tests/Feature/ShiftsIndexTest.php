@@ -127,6 +127,40 @@ class ShiftsIndexTest extends TestCase
         $this->assertSame('bike', $user->fresh()->profile->vehicle);
     }
 
+    public function test_switch_role_to_business_blocks_minor(): void
+    {
+        $user = $this->creator();
+        $user->profile()->update(['birth_date' => now()->subYears(17)->toDateString()]);
+        $this->actingAs($user);
+
+        Livewire::test(Index::class)->call('switchRole', 'business');
+
+        $this->assertSame('courier', $user->profile->fresh()->role);
+    }
+
+    public function test_switch_role_to_business_works_for_adult(): void
+    {
+        $user = $this->creator();
+        $user->profile()->update(['birth_date' => now()->subYears(20)->toDateString()]);
+        $this->actingAs($user);
+
+        Livewire::test(Index::class)->call('switchRole', 'business');
+
+        $this->assertSame('business', $user->profile->fresh()->role);
+    }
+
+    public function test_switch_role_to_courier_redirects_when_data_is_missing(): void
+    {
+        $user = $this->creator();
+        $user->profile()->update(['role' => 'business', 'birth_date' => now()->subYears(30)->toDateString()]);
+        $this->actingAs($user);
+
+        Livewire::test(Index::class)->call('switchRole', 'courier')
+            ->assertRedirect(route('switch-to-courier'));
+
+        $this->assertSame('business', $user->profile->fresh()->role);
+    }
+
     public function test_accepted_courier_sees_success_message_others_dont(): void
     {
         $courier = User::create(['name' => 'Moto', 'email' => 'moto'.uniqid().'@test.dev', 'password' => 'secret123']);
