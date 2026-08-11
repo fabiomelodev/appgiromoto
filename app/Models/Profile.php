@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Profile shares its primary key with the owning user (id = users.id).
@@ -73,5 +74,17 @@ class Profile extends Model
     public function isOnboarded(): bool
     {
         return ! is_null($this->onboarded_at);
+    }
+
+    /** Whether the birth date on file makes this account 18+ (required to be "estabelecimento" or pick "moto"). */
+    public function isAdult(): bool
+    {
+        return $this->birth_date && ! Carbon::parse($this->birth_date)->isAfter(now()->subYears(18));
+    }
+
+    /** Data still needed to act as courier: "cidade base" (district/city) and a vehicle. */
+    public function missingCourierFields(): bool
+    {
+        return blank($this->district) || blank($this->city) || blank($this->vehicle);
     }
 }

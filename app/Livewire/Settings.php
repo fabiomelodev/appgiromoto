@@ -80,8 +80,25 @@ class Settings extends Component
             return;
         }
 
-        Auth::user()->profile?->update(['role' => $role]);
-        $this->dispatch('toast', message: $role === 'business' ? 'Perfil alterado para Restaurante.' : 'Perfil alterado para Motoboy.');
+        $profile = Auth::user()->profile;
+        if (! $profile || $profile->role === $role) {
+            return;
+        }
+
+        if ($role === 'business' && ! $profile->isAdult()) {
+            $this->dispatch('toast', message: 'Você precisa ter 18 anos para virar Estabelecimento.', type: 'error');
+
+            return;
+        }
+
+        if ($role === 'courier' && $profile->missingCourierFields()) {
+            $this->redirect(route('switch-to-courier'), navigate: true);
+
+            return;
+        }
+
+        $profile->update(['role' => $role]);
+        $this->dispatch('toast', message: $role === 'business' ? 'Perfil alterado para Estabelecimento.' : 'Perfil alterado para Motoboy.');
     }
 
     public function updateEmail(): void

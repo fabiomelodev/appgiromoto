@@ -136,9 +136,12 @@ class ProfilePage extends Component
 
     public function render()
     {
+        $profile = Auth::user()->profile;
+
         return view('livewire.profile-page', [
             'user' => Auth::user(),
-            'profile' => Auth::user()->profile,
+            'profile' => $profile,
+            'isBusiness' => $profile?->role === 'business',
         ]);
     }
 }

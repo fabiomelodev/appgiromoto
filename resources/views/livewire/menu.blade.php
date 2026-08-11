@@ -10,7 +10,14 @@
     $items = [
         ...$items,
         ['route' => 'profile', 'icon' => 'user', 'label' => 'Meu Perfil', 'hint' => 'Dados pessoais, avaliações e histórico'],
-        ['route' => 'vehicle', 'icon' => 'bike', 'label' => 'Veículo e Documentação', 'hint' => $profile?->vehicle ? (App\Support\Catalog::VEHICLE_LABEL[$profile->vehicle] ?? $profile->vehicle) : 'Defina seu veículo e envie documentos'],
+    ];
+
+    if ($profile?->role !== 'business') {
+        $items[] = ['route' => 'vehicle', 'icon' => 'bike', 'label' => 'Veículo e Documentação', 'hint' => $profile?->vehicle ? (App\Support\Catalog::VEHICLE_LABEL[$profile->vehicle] ?? $profile->vehicle) : 'Defina seu veículo e envie documentos'];
+    }
+
+    $items = [
+        ...$items,
         ['route' => 'addresses', 'icon' => 'map-pin', 'label' => 'Meus Endereços', 'hint' => 'Salve endereços para acelerar suas vagas'],
         ['route' => 'history', 'icon' => 'history', 'label' => 'Histórico de Turnos', 'hint' => 'Vagas realizadas e substituições'],
         ['route' => 'settings', 'icon' => 'settings', 'label' => 'Configurações', 'hint' => 'Tema, notificações e preferências'],

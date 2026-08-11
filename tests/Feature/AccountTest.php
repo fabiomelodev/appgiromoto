@@ -7,7 +7,9 @@ use App\Livewire\ProfilePage;
 use App\Livewire\Settings;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -53,6 +55,36 @@ class AccountTest extends TestCase
             ->assertSee(route('filament.admin.pages.dashboard'));
     }
 
+    public function test_menu_shows_vehicle_link_only_to_courier(): void
+    {
+        $courier = $this->user();
+        $this->actingAs($courier);
+        Livewire::test(Menu::class)->assertSee('Veículo e Documentação');
+
+        $owner = $this->user();
+        $owner->profile()->update(['role' => 'business']);
+        $this->actingAs($owner);
+        Livewire::test(Menu::class)->assertDontSee('Veículo e Documentação');
+    }
+
+    public function test_uploading_a_photo_stores_it_publicly_and_updates_profile_url(): void
+    {
+        Storage::fake('public');
+        $user = $this->user();
+        $this->actingAs($user);
+
+        Livewire::test(ProfilePage::class)
+            ->set('photo', UploadedFile::fake()->image('avatar.jpg'))
+            ->assertDispatched('toast');
+
+        $profile = $user->fresh()->profile;
+        $this->assertNotNull($profile->photo_url, 'photo_url deve ser preenchido após o upload');
+        $this->assertStringContainsString('/storage/avatars/', $profile->photo_url);
+
+        $path = 'avatars/'.$user->id.'.jpg';
+        Storage::disk('public')->assertExists($path);
+    }
+
     public function test_profile_save_updates_profile_and_user_name(): void
     {
         $user = $this->user();
@@ -75,6 +107,35 @@ class AccountTest extends TestCase
         $this->assertSame('Entregadora veloz', $profile->bio);
         $this->assertTrue((bool) $profile->has_bag);
         $this->assertSame('Maria Souza', $user->fresh()->name);
+    }
+
+    public function test_profile_page_hides_courier_only_sections_for_business(): void
+    {
+        $courier = $this->user();
+        $this->actingAs($courier);
+        Livewire::test(ProfilePage::class)
+            ->assertSee('Avaliações')
+            ->assertSee('Endereço')
+            ->assertSee('Equipamentos disponíveis');
+
+        $owner = $this->user();
+        $owner->profile()->update(['role' => 'business']);
+        $this->actingAs($owner);
+        Livewire::test(ProfilePage::class)
+            ->assertDontSee('Avaliações')
+            ->assertDontSee('Equipamentos disponíveis')
+            ->assertSee('Meus Endereços');
+    }
+
+    public function test_profile_page_has_no_verification_or_status_badges(): void
+    {
+        $this->actingAs($this->user());
+
+        Livewire::test(ProfilePage::class)
+            ->assertDontSee('Verificado')
+            ->assertDontSee('Conta nova')
+            ->assertDontSee('Entregador ativo')
+            ->assertDontSee('Entregador experiente');
     }
 
     public function test_settings_notifications_persist(): void

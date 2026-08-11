@@ -18,6 +18,7 @@ use App\Livewire\Settings;
 use App\Livewire\Shifts\Create as ShiftsCreate;
 use App\Livewire\Shifts\Index as ShiftsIndex;
 use App\Livewire\Shifts\Show as ShiftsShow;
+use App\Livewire\SwitchToCourier;
 use App\Livewire\Vehicle;
 use App\Models\Contact;
 use App\Models\Document;
@@ -71,6 +72,10 @@ Route::middleware(['auth', 'onboarded'])->group(function () {
     Route::get('/menu', Menu::class)->name('menu');
     Route::get('/profile', ProfilePage::class)->name('profile');
     Route::get('/settings', Settings::class)->name('settings');
+
+    // Completes missing motoboy data (cidade base + veículo) when switching
+    // from estabelecimento — see Profile::missingCourierFields().
+    Route::get('/completar-motoboy', SwitchToCourier::class)->name('switch-to-courier');
 
     // Vehicle & documents (same screen serves both routes)
     Route::get('/vehicle', Vehicle::class)->name('vehicle');

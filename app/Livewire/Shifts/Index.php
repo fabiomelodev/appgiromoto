@@ -80,6 +80,40 @@ class Index extends Component
         $this->dispatch('toast', message: 'Veículo atualizado: '.(Catalog::VEHICLE_LABEL[$vehicle] ?? $vehicle));
     }
 
+    /** Switch the active profile (courier <-> business); the same account can be both, one at a time. */
+    public function switchRole(string $role): void
+    {
+        if (! in_array($role, ['courier', 'business'], true)) {
+            return;
+        }
+
+        $profile = Auth::user()?->profile;
+        if (! $profile || $profile->role === $role) {
+            return;
+        }
+
+        if ($role === 'business' && ! $profile->isAdult()) {
+            $this->dispatch('toast', message: 'Você precisa ter 18 anos para virar Estabelecimento.', type: 'error');
+
+            return;
+        }
+
+        if ($role === 'courier' && $profile->missingCourierFields()) {
+            $this->redirect(route('switch-to-courier'), navigate: true);
+
+            return;
+        }
+
+        $profile->update(['role' => $role]);
+        $this->dispatch('toast', message: $role === 'business' ? 'Perfil alterado para Estabelecimento.' : 'Perfil alterado para Motoboy.');
+    }
+
+    #[Computed]
+    public function currentRole(): string
+    {
+        return Auth::user()?->profile?->role ?? 'courier';
+    }
+
     #[Computed]
     public function regions(): array
     {

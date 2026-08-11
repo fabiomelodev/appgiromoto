@@ -43,46 +43,45 @@
                 </div>
             </div>
 
-            <div class="mt-4 flex items-center gap-2">
-                <div class="flex items-center gap-0.5">
-                    @for ($i = 1; $i <= 5; $i++)
-                        <x-ui.icon name="star" class="h-4 w-4 {{ $i <= round($rating) ? 'text-primary fill-current' : 'text-muted-foreground/30' }}" />
-                    @endfor
+            @unless ($isBusiness)
+                <div class="mt-4 flex items-center gap-2">
+                    <div class="flex items-center gap-0.5">
+                        @for ($i = 1; $i <= 5; $i++)
+                            <x-ui.icon name="star" class="h-4 w-4 {{ $i <= round($rating) ? 'text-primary fill-current' : 'text-muted-foreground/30' }}" />
+                        @endfor
+                    </div>
+                    <span class="text-xs text-muted-foreground">
+                        @if ($totalReviews > 0)
+                            <span class="font-semibold text-foreground">{{ number_format($rating, 1, ',', '') }}</span> · {{ $totalReviews }} {{ $totalReviews === 1 ? 'avaliação' : 'avaliações' }}
+                        @else
+                            Sem avaliações ainda
+                        @endif
+                    </span>
                 </div>
-                <span class="text-xs text-muted-foreground">
-                    @if ($totalReviews > 0)
-                        <span class="font-semibold text-foreground">{{ number_format($rating, 1, ',', '') }}</span> · {{ $totalReviews }} {{ $totalReviews === 1 ? 'avaliação' : 'avaliações' }}
-                    @else
-                        Sem avaliações ainda
-                    @endif
-                </span>
-            </div>
-
-            <div class="mt-4 flex flex-wrap gap-1.5">
-                <x-profile-badge icon="badge-check" label="Verificado" />
-                <x-profile-badge icon="sparkles" label="Entregador ativo" />
-                @if ($totalReviews === 0 && $stats['completed'] === 0)
-                    <x-profile-badge icon="shield" label="Conta nova" />
-                @else
-                    <x-profile-badge icon="trending-up" label="Entregador experiente" />
-                @endif
-            </div>
+            @endunless
         </div>
     </div>
 
     {{-- Stat cards --}}
     <div class="-mt-2 px-4">
         <div class="grid grid-cols-3 gap-2">
-            <x-profile-stat icon="bike" :value="$stats['published']" label="Vagas" />
-            <x-profile-stat icon="calendar-check" :value="$stats['completed']" label="Escalas" />
-            <x-profile-stat icon="trending-up" :value="$totalReviews" label="Reviews" />
+            <x-profile-stat icon="bike" :value="$stats['published']" label="Vagas" description="Criadas por você" />
+            <x-profile-stat icon="calendar-check" :value="$stats['completed']" label="Escalas" description="Concluídas ou aceitas" />
+            <x-profile-stat icon="trending-up" :value="$totalReviews" label="Reviews" description="Recebidas" />
         </div>
     </div>
+
+    @php
+        $tabs = ['info' => 'Pessoal', 'stats' => 'Estatísticas'];
+        if (! $isBusiness) {
+            $tabs['reviews'] = 'Avaliações';
+        }
+    @endphp
 
     {{-- Tabs --}}
     <div class="mt-6 px-4">
         <div class="flex gap-1.5 rounded-2xl border border-border bg-surface p-1">
-            @foreach (['info' => 'Pessoal', 'stats' => 'Estatísticas', 'reviews' => 'Avaliações'] as $id => $label)
+            @foreach ($tabs as $id => $label)
                 <button wire:click="$set('tab', '{{ $id }}')"
                     class="flex-1 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold transition {{ $tab === $id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground' }}">
                     {{ $label }}
@@ -103,31 +102,39 @@
                     <x-ui.field label="Telefone / WhatsApp"><x-ui.input wire:model="phone" inputmode="tel" placeholder="(11) 9 9999-0000" class="h-12 rounded-xl" x-on:input="$el.value = window.maskPhone($el.value)" /></x-ui.field>
                 </x-profile-section>
 
-                <x-profile-section title="Endereço">
-                    <div class="grid grid-cols-[1fr_90px] gap-2">
-                        <x-ui.field label="Rua"><x-ui.input wire:model="street" placeholder="Av. Paulista" class="h-12 rounded-xl" /></x-ui.field>
-                        <x-ui.field label="Número"><x-ui.input wire:model="streetNumber" placeholder="100" class="h-12 rounded-xl" /></x-ui.field>
-                    </div>
-                    <x-ui.field label="Bairro"><x-ui.input wire:model="district" placeholder="Centro" class="h-12 rounded-xl" /></x-ui.field>
-                    <x-ui.field label="Cidade"><x-ui.input wire:model="city" placeholder="São Paulo - SP" class="h-12 rounded-xl" /></x-ui.field>
-                </x-profile-section>
+                @if ($isBusiness)
+                    <x-profile-section title="Endereço">
+                        <p class="text-xs text-muted-foreground">O endereço do seu estabelecimento é cadastrado em "Meus Endereços".</p>
+                    </x-profile-section>
+                @else
+                    <x-profile-section title="Endereço">
+                        <div class="grid grid-cols-[1fr_90px] gap-2">
+                            <x-ui.field label="Rua"><x-ui.input wire:model="street" placeholder="Av. Paulista" class="h-12 rounded-xl" /></x-ui.field>
+                            <x-ui.field label="Número"><x-ui.input wire:model="streetNumber" placeholder="100" class="h-12 rounded-xl" /></x-ui.field>
+                        </div>
+                        <x-ui.field label="Bairro"><x-ui.input wire:model="district" placeholder="Centro" class="h-12 rounded-xl" /></x-ui.field>
+                        <x-ui.field label="Cidade"><x-ui.input wire:model="city" placeholder="São Paulo - SP" class="h-12 rounded-xl" /></x-ui.field>
+                    </x-profile-section>
+                @endif
 
                 <x-profile-section title="Sobre você">
                     <x-ui.field label="Bio"><x-ui.textarea wire:model="bio" rows="3" placeholder="Conte um pouco sobre você…" class="rounded-xl"></x-ui.textarea></x-ui.field>
                 </x-profile-section>
 
-                <x-profile-section title="Equipamentos disponíveis">
-                    <label class="flex cursor-pointer items-center justify-between rounded-xl border border-border/60 bg-surface px-4 py-3">
-                        <span class="flex items-center gap-3">
-                            <span class="grid h-9 w-9 place-items-center rounded-lg bg-primary/15 text-primary"><x-ui.icon name="package" class="h-4 w-4" /></span>
-                            <span>
-                                <span class="block text-sm font-semibold text-foreground">Possuo Mochila Térmica (Bag)</span>
-                                <span class="block text-[11px] text-muted-foreground">Alguns restaurantes exigem que você tenha uma bag.</span>
+                @unless ($isBusiness)
+                    <x-profile-section title="Equipamentos disponíveis">
+                        <label class="flex cursor-pointer items-center justify-between rounded-xl border border-border/60 bg-surface px-4 py-3">
+                            <span class="flex items-center gap-3">
+                                <span class="grid h-9 w-9 place-items-center rounded-lg bg-primary/15 text-primary"><x-ui.icon name="package" class="h-4 w-4" /></span>
+                                <span>
+                                    <span class="block text-sm font-semibold text-foreground">Possuo Mochila Térmica (Bag)</span>
+                                    <span class="block text-[11px] text-muted-foreground">Alguns restaurantes exigem que você tenha uma bag.</span>
+                                </span>
                             </span>
-                        </span>
-                        <x-ui.switch wire:model="hasBag" />
-                    </label>
-                </x-profile-section>
+                            <x-ui.switch wire:model="hasBag" />
+                        </label>
+                    </x-profile-section>
+                @endunless
 
                 <x-ui.button type="submit" size="lg" class="h-12 w-full rounded-xl" wire:loading.attr="disabled" wire:target="save">
                     <x-ui.icon name="save" class="mr-2 h-4 w-4" /> Salvar alterações
@@ -137,8 +144,10 @@
             <x-profile-section title="Estatísticas">
                 <x-profile-statrow label="Vagas publicadas" :value="$stats['published']" />
                 <x-profile-statrow label="Escalas concluídas" :value="$stats['completed']" />
-                <x-profile-statrow label="Avaliações recebidas" :value="$totalReviews" />
-                <x-profile-statrow label="Nota média" :value="$totalReviews > 0 ? number_format($rating, 1, ',', '') : '—'" highlight />
+                @unless ($isBusiness)
+                    <x-profile-statrow label="Avaliações recebidas" :value="$totalReviews" />
+                    <x-profile-statrow label="Nota média" :value="$totalReviews > 0 ? number_format($rating, 1, ',', '') : '—'" highlight />
+                @endunless
             </x-profile-section>
         @else
             <x-profile-section title="Avaliações recebidas">
