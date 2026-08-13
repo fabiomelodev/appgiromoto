@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -73,6 +74,10 @@ class UsersTable
                         true: fn (Builder $query) => $query->whereHas('addresses'),
                         false: fn (Builder $query) => $query->whereDoesntHave('addresses'),
                     ),
+            ])
+            ->recordActions([
+                ViewAction::make()
+                    ->iconButton(),
             ]);
     }
 }
