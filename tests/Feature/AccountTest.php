@@ -109,6 +109,20 @@ class AccountTest extends TestCase
         $this->assertSame('Maria Souza', $user->fresh()->name);
     }
 
+    public function test_profile_save_ignores_a_calendar_invalid_birth_date(): void
+    {
+        $user = $this->user();
+        $this->actingAs($user);
+
+        Livewire::test(ProfilePage::class)
+            ->set('name', 'Maria Souza')
+            ->set('birthDate', '31/02/1990') // fevereiro não tem dia 31
+            ->call('save')
+            ->assertDispatched('toast');
+
+        $this->assertNull($user->fresh()->profile->birth_date);
+    }
+
     public function test_profile_page_hides_courier_only_sections_for_business(): void
     {
         $courier = $this->user();

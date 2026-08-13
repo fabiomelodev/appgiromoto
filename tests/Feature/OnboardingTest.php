@@ -55,6 +55,19 @@ class OnboardingTest extends TestCase
             ->assertSet('step', 1);
     }
 
+    public function test_step1_rejects_a_calendar_invalid_date(): void
+    {
+        $this->actingAs($this->pendingUser());
+
+        Livewire::test(Onboarding::class)
+            ->set('name', 'João Silva')
+            ->set('phone', '(11) 99999-0000')
+            ->set('birthDate', '31/02/1990') // fevereiro não tem dia 31
+            ->call('submitPersonalData')
+            ->assertHasErrors('birthDate')
+            ->assertSet('step', 1);
+    }
+
     public function test_step1_advances_to_the_profile_step(): void
     {
         $this->actingAs($this->pendingUser());

@@ -301,7 +301,7 @@ class Onboarding extends Component
 
     protected function parseBrDate(string $value): ?string
     {
-        if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', trim($value), $m)) {
+        if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', trim($value), $m) && checkdate((int) $m[2], (int) $m[1], (int) $m[3])) {
             return "{$m[3]}-{$m[2]}-{$m[1]}";
         }
 
