@@ -1,5 +1,5 @@
 @php use App\Support\Catalog; @endphp
-<div class="flex min-h-dvh flex-col px-6 py-10">
+<div class="flex min-h-dvh flex-col px-6 py-10 lg:mx-auto lg:max-w-[40rem]">
     <div class="flex flex-1 flex-col justify-center">
         <div class="mb-14 flex flex-col items-center text-center">
             <x-logo :size="56" :withText="false" />
