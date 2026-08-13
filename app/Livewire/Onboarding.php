@@ -74,10 +74,17 @@ class Onboarding extends Component
         if ($role === 'business' && ! $this->isAdult) {
             return;
         }
-        $this->role = $role === 'business' ? 'business' : 'courier';
+
+        $newRole = $role === 'business' ? 'business' : 'courier';
+        if ($newRole !== $this->role) {
+            // Os campos de endereço têm significado diferente em cada perfil — não deixa
+            // o que foi digitado num contexto vazar pro outro ao trocar de perfil.
+            $this->reset('cep', 'district', 'city', 'label', 'street', 'number', 'reference', 'photo');
+        }
+        $this->role = $newRole;
     }
 
-    /** Fills district / city from the CEP (ViaCEP), like the address forms. */
+    /** Fills street / district / city from the CEP (ViaCEP), like the address forms. */
     public function lookupCep(): void
     {
         $digits = preg_replace('/\D/', '', $this->cep);
@@ -89,6 +96,7 @@ class Onboarding extends Component
         try {
             $data = Http::timeout(6)->get("https://viacep.com.br/ws/{$digits}/json/")->json();
             if (is_array($data) && empty($data['erro'])) {
+                $this->street = $data['logradouro'] ?: $this->street;
                 $this->district = $data['bairro'] ?: $this->district;
                 $this->city = ($data['localidade'] ?? '')
                     ? trim(($data['localidade'] ?? '').(isset($data['uf']) ? ' - '.$data['uf'] : ''))

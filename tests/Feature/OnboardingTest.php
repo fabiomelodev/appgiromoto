@@ -6,6 +6,7 @@ use App\Livewire\Onboarding;
 use App\Models\User;
 use App\Models\UserAddress;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -100,6 +101,80 @@ class OnboardingTest extends TestCase
             ->set('birthDate', now()->subYears(25)->format('d/m/Y'))
             ->call('setRole', 'business')
             ->assertSet('role', 'business');
+    }
+
+    public function test_switching_from_courier_to_business_clears_address_fields(): void
+    {
+        $this->actingAs($this->pendingUser());
+
+        Livewire::test(Onboarding::class)
+            ->set('birthDate', now()->subYears(25)->format('d/m/Y'))
+            ->set('cep', '01310-100')
+            ->set('district', 'Centro')
+            ->set('city', 'São Paulo')
+            ->call('setRole', 'business')
+            ->assertSet('cep', '')
+            ->assertSet('district', '')
+            ->assertSet('city', '');
+    }
+
+    public function test_switching_from_business_to_courier_clears_address_fields(): void
+    {
+        $this->actingAs($this->pendingUser());
+
+        Livewire::test(Onboarding::class)
+            ->set('birthDate', now()->subYears(25)->format('d/m/Y'))
+            ->call('setRole', 'business')
+            ->set('label', 'Restaurante da Ana')
+            ->set('cep', '01310-100')
+            ->set('street', 'Av Paulista')
+            ->set('number', '100')
+            ->set('district', 'Centro')
+            ->set('city', 'São Paulo')
+            ->set('reference', 'Perto do metrô')
+            ->call('setRole', 'courier')
+            ->assertSet('label', '')
+            ->assertSet('cep', '')
+            ->assertSet('street', '')
+            ->assertSet('number', '')
+            ->assertSet('district', '')
+            ->assertSet('city', '')
+            ->assertSet('reference', '');
+    }
+
+    public function test_reselecting_the_same_role_does_not_clear_address_fields(): void
+    {
+        $this->actingAs($this->pendingUser());
+
+        Livewire::test(Onboarding::class)
+            ->set('district', 'Centro')
+            ->set('city', 'São Paulo')
+            ->call('setRole', 'courier') // already the default role
+            ->assertSet('district', 'Centro')
+            ->assertSet('city', 'São Paulo');
+    }
+
+    public function test_lookup_cep_fills_street_district_and_city(): void
+    {
+        Http::fake([
+            'viacep.com.br/*' => Http::response([
+                'logradouro' => 'Avenida Paulista',
+                'bairro' => 'Bela Vista',
+                'localidade' => 'São Paulo',
+                'uf' => 'SP',
+                'erro' => false,
+            ]),
+        ]);
+        $this->actingAs($this->pendingUser());
+
+        Livewire::test(Onboarding::class)
+            ->set('birthDate', now()->subYears(25)->format('d/m/Y'))
+            ->call('setRole', 'business')
+            ->set('cep', '01310-100')
+            ->call('lookupCep')
+            ->assertSet('street', 'Avenida Paulista')
+            ->assertSet('district', 'Bela Vista')
+            ->assertSet('city', 'São Paulo - SP');
     }
 
     public function test_courier_profile_step_saves_data_and_advances_to_vehicle_step(): void
