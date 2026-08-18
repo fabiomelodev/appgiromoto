@@ -246,4 +246,21 @@ class ShiftsIndexTest extends TestCase
             ->assertSee('CardNaPagina')  // shift card
             ->assertSee('Vagas');        // bottom-nav label
     }
+
+    public function test_bottom_nav_plus_button_links_directly_to_shift_creation_for_current_role(): void
+    {
+        $courier = $this->creator();
+        $this->actingAs($courier)
+            ->get('/shifts')
+            ->assertOk()
+            ->assertSee(route('shifts.create', ['as' => 'courier']))
+            ->assertDontSee('Quem está criando esta vaga?');
+
+        $owner = $this->creator();
+        $owner->profile()->update(['role' => 'business']);
+        $this->actingAs($owner)
+            ->get('/shifts')
+            ->assertOk()
+            ->assertSee(route('shifts.create', ['as' => 'business']));
+    }
 }

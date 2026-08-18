@@ -115,6 +115,43 @@ class ShiftFlowTest extends TestCase
         $this->assertDatabaseCount('applications', 0);
     }
 
+    public function test_accepted_courier_still_appears_in_interested_list_with_badge(): void
+    {
+        $creator = $this->user('Dono');
+        $courier = $this->user('Moto');
+        $shift = $this->shift($creator);
+
+        Application::create(['shift_id' => $shift->id, 'user_id' => $courier->id, 'status' => Application::STATUS_ACCEPTED]);
+
+        $this->actingAs($creator);
+
+        Livewire::test(Show::class, ['id' => $shift->id])
+            ->assertSee('Motoboys interessados')
+            ->assertSeeHtml('(1)')
+            ->assertSee('Moto')
+            ->assertSee('Aceito')
+            ->assertDontSee('Ainda ninguém demonstrou interesse.');
+    }
+
+    public function test_confirm_has_bag_unblocks_registration_without_leaving_the_page(): void
+    {
+        $creator = $this->user('Dono');
+        $courier = $this->user('Moto');
+        $courier->profile->update(['vehicle' => 'moto', 'has_bag' => false]);
+        $shift = $this->shift($creator, ['requires_own_bag' => true]);
+
+        $this->actingAs($courier);
+
+        Livewire::test(Show::class, ['id' => $shift->id])
+            ->assertSee('Sim, tenho mochila térmica (bag)')
+            ->call('confirmHasBag')
+            ->assertDispatched('toast')
+            ->assertDontSee('Sim, tenho mochila térmica (bag)')
+            ->assertSee('Aceitar Vaga');
+
+        $this->assertTrue((bool) $courier->profile->fresh()->has_bag);
+    }
+
     public function test_creator_submits_review_and_rating_is_recalculated(): void
     {
         $creator = $this->user('Dono');
@@ -137,6 +174,39 @@ class ShiftFlowTest extends TestCase
         ]);
         $this->assertSame(5.0, (float) $courier->fresh()->profile->avg_rating);
         $this->assertSame(1, (int) $courier->fresh()->profile->total_reviews);
+    }
+
+    public function test_review_button_locks_after_submission_and_second_submit_does_not_overwrite(): void
+    {
+        $creator = $this->user('Dono');
+        $courier = $this->user('Moto');
+        $shift = $this->shift($creator, [
+            'status' => 'reserved', 'reserved_by' => $courier->id,
+            'date' => now()->subDay()->toDateString(),
+        ]);
+
+        $this->actingAs($creator);
+        Livewire::test(Show::class, ['id' => $shift->id])
+            ->set('rating', 5)
+            ->set('comment', 'Primeira avaliação')
+            ->call('submitReview');
+
+        // Button now shows the locked state instead of the reviewable one.
+        Livewire::test(Show::class, ['id' => $shift->id])
+            ->assertSee('Avaliação enviada')
+            ->assertDontSee('Avaliar entregador');
+
+        // Even if triggered directly, a second submission must not change the review.
+        Livewire::test(Show::class, ['id' => $shift->id])
+            ->set('rating', 1)
+            ->set('comment', 'Tentativa de sobrescrever')
+            ->call('submitReview');
+
+        $this->assertDatabaseCount('reviews', 1);
+        $this->assertDatabaseHas('reviews', [
+            'shift_id' => $shift->id, 'author_id' => $creator->id, 'target_id' => $courier->id,
+            'rating' => 5, 'comment' => 'Primeira avaliação',
+        ]);
     }
 
     public function test_non_creator_cannot_review_or_self_review(): void

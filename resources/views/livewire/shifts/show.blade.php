@@ -242,7 +242,11 @@
                 <x-ui.button variant="outline" size="lg" class="w-full"><x-ui.icon name="copy" class="mr-2 h-4 w-4" /> Anunciar Novamente</x-ui.button>
             </a>
             @if ($shift->reserved_by && $needed === 1)
-                <x-ui.button size="lg" class="w-full" wire:click="$set('reviewOpen', true)"><x-ui.icon name="star" class="mr-2 h-4 w-4" /> Avaliar entregador</x-ui.button>
+                @if ($alreadyReviewed)
+                    <x-ui.button size="lg" variant="secondary" class="w-full" disabled><x-ui.icon name="check" class="mr-2 h-4 w-4" /> Avaliação enviada</x-ui.button>
+                @else
+                    <x-ui.button size="lg" class="w-full" wire:click="$set('reviewOpen', true)"><x-ui.icon name="star" class="mr-2 h-4 w-4" /> Avaliar entregador</x-ui.button>
+                @endif
             @endif
         </div>
     @endif
@@ -275,6 +279,9 @@
                     <x-ui.icon name="alert-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
                     <p class="text-foreground/90">Este estabelecimento exige que você leve sua própria Mochila Térmica (Bag). Para aceitar, acesse "Meu Perfil" e ative a opção de que possui o equipamento.</p>
                 </div>
+                <x-ui.button size="lg" variant="outline" class="w-full" wire:click="confirmHasBag" wire:loading.attr="disabled" wire:target="confirmHasBag">
+                    <x-ui.icon name="package" class="mr-2 h-4 w-4" /> Sim, tenho mochila térmica (bag)
+                </x-ui.button>
             </div>
         @else
             <x-ui.button size="lg" class="w-full glow-orange" wire:click="$set('confirmOpen', true)">Aceitar Vaga</x-ui.button>
