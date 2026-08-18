@@ -129,6 +129,14 @@ class Show extends Component
             return;
         }
 
+        $alreadyReviewed = Review::where('shift_id', $shift->id)
+            ->where('author_id', Auth::id())
+            ->where('target_id', $courierId)
+            ->exists();
+        if ($alreadyReviewed) {
+            return;
+        }
+
         Review::updateOrCreate(
             ['shift_id' => $shift->id, 'author_id' => Auth::id(), 'target_id' => $courierId],
             ['rating' => $this->rating, 'comment' => trim($this->comment)],
@@ -171,6 +179,12 @@ class Show extends Component
                 ->first(fn ($v) => $v->start_time < $shift->end_time && $shift->start_time < $v->end_time);
         }
 
+        $alreadyReviewed = $shift && $courierId
+            && Review::where('shift_id', $shift->id)
+                ->where('author_id', $me)
+                ->where('target_id', $courierId)
+                ->exists();
+
         $vm = [
             'chat' => $chat,
             'shift' => $shift,
@@ -182,7 +196,8 @@ class Show extends Component
             'expired' => $expired,
             'conflict' => $conflict,
             'isCreator' => $shift && $shift->creator_id === $me,
-            'canReview' => $shift && $confirmedHere && $expired && $shift->creator_id === $me && $courierId,
+            'alreadyReviewed' => $alreadyReviewed,
+            'canReview' => $shift && $confirmedHere && $expired && $shift->creator_id === $me && $courierId && ! $alreadyReviewed,
             // confirm-panel state
             'alreadyConfirmed' => in_array($me, $confirmations, true),
             'otherConfirmed' => in_array($otherId, $confirmations, true),

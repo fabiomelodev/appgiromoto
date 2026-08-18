@@ -57,6 +57,10 @@
             <x-ui.textarea wire:model="comment" placeholder="Comentário (opcional)" rows="2" />
             <x-ui.button size="sm" class="w-full" wire:click="submitReview" :disabled="$rating === 0">Enviar avaliação</x-ui.button>
         </div>
+    @elseif ($alreadyReviewed)
+        <div class="flex items-center gap-2 border-t border-border bg-surface/80 px-4 py-3 text-xs font-semibold text-muted-foreground">
+            <x-ui.icon name="check" class="h-4 w-4" /> Avaliação enviada
+        </div>
     @endif
 
     {{-- Partnership panel --}}
