@@ -9,6 +9,7 @@ use App\Models\Application;
 use App\Models\Chat;
 use App\Models\Message;
 use App\Models\Notification;
+use App\Models\Review;
 use App\Models\Shift;
 use App\Models\User;
 use App\Support\Partnerships;
@@ -129,6 +130,44 @@ class ChatFlowTest extends TestCase
             2,
             Notification::where('type', 'turno')->where('title', 'Parceria confirmada!')->count()
         );
+    }
+
+    public function test_creator_reviews_courier_from_chat_and_second_submit_is_locked(): void
+    {
+        $creator = $this->user('Dono');
+        $courier = $this->user('Moto');
+        $shift = $this->shift($creator, ['date' => now()->subDay()->toDateString()]);
+        Application::create(['shift_id' => $shift->id, 'user_id' => $courier->id, 'status' => 'accepted', 'confirmed' => true]);
+        $chat = Chat::findOrCreateBetween($shift->id, $creator->id, $courier->id);
+
+        $this->actingAs($creator);
+        Livewire::test(ChatsShow::class, ['id' => $chat->id])
+            ->assertSee('Vaga concluída')
+            ->set('rating', 5)
+            ->set('comment', 'Primeira avaliação')
+            ->call('submitReview');
+
+        $this->assertDatabaseHas('reviews', [
+            'shift_id' => $shift->id, 'author_id' => $creator->id, 'target_id' => $courier->id,
+            'rating' => 5, 'comment' => 'Primeira avaliação',
+        ]);
+
+        // Panel now shows the locked state instead of the review form.
+        Livewire::test(ChatsShow::class, ['id' => $chat->id])
+            ->assertDontSee('Vaga concluída')
+            ->assertSee('Avaliação enviada');
+
+        // Even if triggered directly, a second submission must not change the review.
+        Livewire::test(ChatsShow::class, ['id' => $chat->id])
+            ->set('rating', 1)
+            ->set('comment', 'Tentativa de sobrescrever')
+            ->call('submitReview');
+
+        $this->assertDatabaseCount('reviews', 1);
+        $this->assertDatabaseHas('reviews', [
+            'shift_id' => $shift->id, 'author_id' => $creator->id, 'target_id' => $courier->id,
+            'rating' => 5, 'comment' => 'Primeira avaliação',
+        ]);
     }
 
     public function test_send_message_persists_and_notifies_recipient(): void
