@@ -33,6 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 'Vagas',
+                'Usuários',
                 'Ajuda e Suporte',
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')

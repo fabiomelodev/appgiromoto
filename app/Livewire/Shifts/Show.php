@@ -64,6 +64,13 @@ class Show extends Component
         $this->dispatch('toast', message: 'Interesse enviado!');
     }
 
+    /** Atalho pra confirmar que tem bag própria direto da tela da vaga, sem ir em "Meu Perfil". */
+    public function confirmHasBag(): void
+    {
+        Auth::user()->profile?->update(['has_bag' => true]);
+        $this->dispatch('toast', message: 'Bag própria confirmada no seu perfil.');
+    }
+
     public function submitReview(): void
     {
         $shift = $this->shift();
@@ -77,6 +84,14 @@ class Show extends Component
             return;
         }
         if (! $this->expired($shift) || $this->rating < 1) {
+            return;
+        }
+
+        $alreadyReviewed = Review::where('shift_id', $shift->id)
+            ->where('author_id', Auth::id())
+            ->where('target_id', $shift->reserved_by)
+            ->exists();
+        if ($alreadyReviewed) {
             return;
         }
 
@@ -205,22 +220,29 @@ class Show extends Component
             ->pluck('user_id');
         $acceptedIds = $apps->where('status', Application::STATUS_ACCEPTED)->pluck('user_id')->all();
 
-        // Mirrors the React detail screen: list shows only couriers still
-        // "interested" (accepted ones move out of this list).
+        // Accepted couriers were interested too — they stay in the list, just
+        // flagged with the "Aceito" badge instead of disappearing from it.
         $interested = $apps
-            ->where('status', Application::STATUS_INTERESTED)
+            ->whereIn('status', [Application::STATUS_INTERESTED, Application::STATUS_ACCEPTED])
             ->map(fn ($a) => [
                 'id' => $a->user_id,
                 'profile' => $a->user?->profile,
-                'accepted' => false,
+                'accepted' => $a->status === Application::STATUS_ACCEPTED,
             ])
             ->values();
 
         $needed = $shift->couriers_needed ?? 1;
 
+        $alreadyReviewed = $shift->creator_id === $userId && $shift->reserved_by
+            && Review::where('shift_id', $shift->id)
+                ->where('author_id', $userId)
+                ->where('target_id', $shift->reserved_by)
+                ->exists();
+
         $vm = [
             'shift' => $shift,
             'isCreator' => $shift->creator_id === $userId,
+            'alreadyReviewed' => $alreadyReviewed,
             'alreadyInterested' => $interestedIds->contains($userId),
             'wasAccepted' => in_array($userId, $acceptedIds, true),
             'needed' => $needed,

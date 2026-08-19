@@ -127,6 +127,52 @@ class ShiftsIndexTest extends TestCase
         $this->assertSame('bike', $user->fresh()->profile->vehicle);
     }
 
+    public function test_switch_role_to_business_blocks_minor(): void
+    {
+        $user = $this->creator();
+        $user->profile()->update(['birth_date' => now()->subYears(17)->toDateString()]);
+        $this->actingAs($user);
+
+        Livewire::test(Index::class)->call('switchRole', 'business');
+
+        $this->assertSame('courier', $user->profile->fresh()->role);
+    }
+
+    public function test_switch_role_to_business_works_for_adult(): void
+    {
+        $user = $this->creator();
+        $user->profile()->update(['birth_date' => now()->subYears(20)->toDateString()]);
+        $this->actingAs($user);
+
+        Livewire::test(Index::class)->call('switchRole', 'business');
+
+        $this->assertSame('business', $user->profile->fresh()->role);
+    }
+
+    public function test_vehicle_button_hidden_for_business_shown_for_courier(): void
+    {
+        $courier = $this->creator();
+        $this->actingAs($courier);
+        Livewire::test(Index::class)->assertSeeHtml('aria-label="Trocar veículo"');
+
+        $owner = $this->creator();
+        $owner->profile()->update(['role' => 'business']);
+        $this->actingAs($owner);
+        Livewire::test(Index::class)->assertDontSeeHtml('aria-label="Trocar veículo"');
+    }
+
+    public function test_switch_role_to_courier_redirects_when_data_is_missing(): void
+    {
+        $user = $this->creator();
+        $user->profile()->update(['role' => 'business', 'birth_date' => now()->subYears(30)->toDateString()]);
+        $this->actingAs($user);
+
+        Livewire::test(Index::class)->call('switchRole', 'courier')
+            ->assertRedirect(route('switch-to-courier'));
+
+        $this->assertSame('business', $user->profile->fresh()->role);
+    }
+
     public function test_accepted_courier_sees_success_message_others_dont(): void
     {
         $courier = User::create(['name' => 'Moto', 'email' => 'moto'.uniqid().'@test.dev', 'password' => 'secret123']);
@@ -199,5 +245,22 @@ class ShiftsIndexTest extends TestCase
             ->assertSee('começa aqui')   // hero
             ->assertSee('CardNaPagina')  // shift card
             ->assertSee('Vagas');        // bottom-nav label
+    }
+
+    public function test_bottom_nav_plus_button_links_directly_to_shift_creation_for_current_role(): void
+    {
+        $courier = $this->creator();
+        $this->actingAs($courier)
+            ->get('/shifts')
+            ->assertOk()
+            ->assertSee(route('shifts.create', ['as' => 'courier']))
+            ->assertDontSee('Quem está criando esta vaga?');
+
+        $owner = $this->creator();
+        $owner->profile()->update(['role' => 'business']);
+        $this->actingAs($owner)
+            ->get('/shifts')
+            ->assertOk()
+            ->assertSee(route('shifts.create', ['as' => 'business']));
     }
 }

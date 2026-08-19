@@ -64,7 +64,7 @@
                     <span class="grid h-9 w-9 place-items-center rounded-lg {{ $profile?->role === 'business' ? 'bg-primary text-primary-foreground' : 'bg-surface-elevated' }}">
                         <x-ui.icon name="store" class="h-5 w-5" />
                     </span>
-                    <div class="text-sm font-semibold text-foreground">Restaurante</div>
+                    <div class="text-sm font-semibold text-foreground">Estabelecimento</div>
                 </button>
             </div>
         </x-settings-section>
